@@ -1,0 +1,33 @@
+/**
+ * Breakify.js CSS
+ * 
+ * @author 	Davide Serafini
+ * @version	0.1a
+ * @since	2015-10-05
+ */
+
+ .breakifyWrapper {
+ 	overflow-x: hidden;
+ 	position: relative;
+ 	height: 500px;
+ }
+
+ .breakifySection {
+ 	position: absolute;
+ 	top: 0px;
+ 	left: 0px;
+ }
+
+ .breakifyAnim {
+ 	transition: transform 0.3s linear;
+ }
+
+ .breakifyLeft {
+ 	float: left;
+ }
+  .breakifyRight {
+ 	float: right;
+ }
+ .breakifyClear {
+ 	clear: both;
+ }
