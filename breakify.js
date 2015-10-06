@@ -5,7 +5,7 @@
  * A simple JS script to break a list of sections into pages, with URL support to allow sharing of a specific page.
  * 
  * @author 	Davide Serafini
- * @version	0.2
+ * @version	0.3
  * @since	2015-10-05
  */
 var BreakifyJS = ( function( configObj ) {
@@ -13,6 +13,7 @@ var BreakifyJS = ( function( configObj ) {
 	var wrapperSelector, elementsSelector, 
 		wrapper, elements, 
 		paginator, 
+		urlLinker,
 		currentPageIndex;
 
 	/**
@@ -77,6 +78,29 @@ var BreakifyJS = ( function( configObj ) {
 	}
 
 	/**
+	 * UrlLinker
+	 */
+	 function UrlLinker() {
+
+	 	let HASH_ID = "page"; 
+
+	 	function setPage( page ) {
+	 		window.location.hash = "#" + HASH_ID + page;
+	 	}
+
+	 	function getPage() {
+	 		let hash = window.location.hash.substring(1);
+	 		let value = hash.replace( HASH_ID, "");
+	 		return value != "" ? value : 0;
+	 	}
+
+	 	return {
+	 		setPage : setPage,
+	 		getPage : getPage
+	 	}
+	 }
+
+	/**
 	 * Main constructor for BreakifyJS object
 	 */
 	function _constructor( configObj ) {
@@ -95,6 +119,9 @@ var BreakifyJS = ( function( configObj ) {
 
 		// Add paginator
 		paginator = new Paginator();
+
+		// Get UrlLinker
+		urlLinker = new UrlLinker();
 
 		// Set CSS classes, special properties and position
 		wrapper.className += " breakifyWrapper";
@@ -118,6 +145,8 @@ var BreakifyJS = ( function( configObj ) {
 			// Add index used for paging
 			element.setAttribute( "breakify-page" , index );
 		})
+
+		goToPage( urlLinker.getPage() );
 	}
 
 	/**
@@ -186,7 +215,20 @@ var BreakifyJS = ( function( configObj ) {
 
 
 	/* Public Methods */
-	function prevPage() {
+	function goToPage ( index ) {
+		if ( currentPageIndex < index ) {
+			let pageToGo = index - currentPageIndex;
+			for ( let i = 0; i < pageToGo; i++ ) {
+				goToNextPage();
+			}
+		} else if ( currentPageIndex > index ) {
+			let pageToGo = currentPageIndex > index;
+			for ( let i = pageToGo; i > 0; i++ ) {
+				goToPrevPage();
+			}
+		}
+	}
+	function goToPreviousPage() {
 		let currentPage = _getPage( currentPageIndex );
 		let nextPageIndex = currentPageIndex - 1;
 		let nextPage = _getPage( nextPageIndex );
@@ -206,13 +248,15 @@ var BreakifyJS = ( function( configObj ) {
 
 		currentPageIndex--;
 
+		urlLinker.setPage( currentPageIndex );
+
 		// Hide hidden page to improve performance
 		setTimeout( function(){
 			currentPage.classList.add( "breakifyHide" );
 		}, 500 );
 	}
 
-	function nextPage() {
+	function goToNextPage() {
 		let currentPage = _getPage( currentPageIndex );
 		let nextPageIndex = currentPageIndex + 1;
 		let nextPage = _getPage( nextPageIndex );
@@ -232,6 +276,8 @@ var BreakifyJS = ( function( configObj ) {
 
 		currentPageIndex++;
 
+		urlLinker.setPage( currentPageIndex );
+
 		// Hide hidden page to improve performance
 		setTimeout( function(){
 			currentPage.classList.add( "breakifyHide" );
@@ -243,8 +289,9 @@ var BreakifyJS = ( function( configObj ) {
 
 	var publicInterface = {
 		init : _constructor,
-		goToPreviousPage : prevPage,
-		goToNextPage : nextPage
+		goToPreviousPage : goToPreviousPage,
+		goToNextPage : goToNextPage,
+		goToPage : goToPage
 	}
 
 	return publicInterface;
