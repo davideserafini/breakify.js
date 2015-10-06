@@ -1,63 +1,131 @@
+"use strict";
 /**
  * Breakify.js
+ *
+ * A simple JS script to break a list of sections into pages, with URL support to allow sharing of a specific page.
  * 
  * @author 	Davide Serafini
- * @version	0.1
+ * @version	0.2
  * @since	2015-10-05
  */
+var BreakifyJS = ( function( configObj ) {
 
-"use strict";
+	var wrapperSelector, elementsSelector, 
+		wrapper, elements, 
+		paginator, 
+		currentPageIndex;
 
-class BreakifyJS {
+	/**
+	 * Provide prev/next links DOM and event binding
+	 */
+	function Paginator() {
 
-	constructor( wrapperSelector, elementsSelector ) {
+		// Wrapper of pagination links
+		var paginatorWrapper;
 
-		// First, fire the request for the CSS file
-		this._addCssFile();
+		function _constructor() {
+			paginatorWrapper = document.createElement( "div" );
+			paginatorWrapper.className = "breakifyPaginatorWrapper";
+
+			let linkPrev = document.createElement( "a" );
+			linkPrev.innerHTML = "Prev";
+			linkPrev.className = "breakifyPaginator breakifyLeft";
+
+			let linkNext = document.createElement( "a" );
+			linkNext.innerHTML = "Next";
+			linkNext.className = "breakifyPaginator breakifyRight";
+
+			let clear = document.createElement( "div" );
+			clear.className = "breakifyClear";
+
+			paginatorWrapper.appendChild( linkPrev );
+			paginatorWrapper.appendChild( linkNext );
+			paginatorWrapper.appendChild( clear );
+			wrapper.insertBefore( paginatorWrapper, wrapper.firstChild );
+
+			linkPrev.addEventListener( "click" , function( event ) {
+				publicInterface.goToPreviousPage();
+			}, false );
+			linkNext.addEventListener( "click" , function( event ) {
+				publicInterface.goToNextPage();
+			}, false );
+		}
+
+		/**
+		 * Get total height of pagination div
+		 */
+		function getHeight() {
+			let paginatorStyle = window.getComputedStyle( paginatorWrapper );
+			let paginatorHeight = _getNumber( paginatorStyle.height );
+			let paginatorTop = _getNumber( paginatorStyle.top );
+			let paginatorMarginTop = _getNumber( paginatorStyle.marginTop );
+			let paginatorMarginBottom = _getNumber( paginatorStyle.marginBottom );
+			let paginatorPaddingTop = _getNumber( paginatorStyle.paddingTop );
+			let paginatorPaddingBottom = _getNumber( paginatorStyle.paddingBottom );
+
+			return Math.round( paginatorHeight + paginatorTop + paginatorMarginTop + paginatorMarginBottom + paginatorPaddingTop + paginatorPaddingBottom );
+		}
+
+		// Call the constructor function automatically when a Paginator instance is created
+		_constructor();
+
+		// "Public" interface
+		return {
+			getHeight : getHeight
+		}
+
+	}
+
+	/**
+	 * Main constructor for BreakifyJS object
+	 */
+	function _constructor( configObj ) {
 
 		// Set selectors
-		this.wrapperSelector = wrapperSelector;
-		this.elementsSelector = elementsSelector;
+		wrapperSelector = configObj.wrapperSelector;
+		elementsSelector = configObj.elementsSelector;
 
 		// Get DOM elements based on selector
-		this.wrapper = document.querySelector( this.wrapperSelector );
-		this.elements = this.wrapper.querySelectorAll( this.elementsSelector );
+		wrapper = document.querySelector( wrapperSelector );
+		// TODO: change to getelementsbyclassname if selector starts with .
+		elements = wrapper.querySelectorAll( elementsSelector );
+
+		// Set current page
+		currentPageIndex = 0;
+
+		// Add paginator
+		paginator = new Paginator();
 
 		// Set CSS classes, special properties and position
-		this.wrapper.className += " breakifyWrapper";
-		let wrapperWidth = window.getComputedStyle( this.wrapper ).width;
-		let that = this;
-		[].forEach.call( this.elements, function( element, index ) {
+		wrapper.className += " breakifyWrapper";
+		let wrapperWidth = window.getComputedStyle( wrapper ).width;
+
+		[].forEach.call( elements, function( element, index ) {
 
 			// Move elements off screen
-			if (index > 0) {
+			if ( index > 0 ) {
 				element.style.transform = "translate3d(" + wrapperWidth + ", 0, 0)";
 			}
 
-			// Ensure CSS classes is added after moving the element offscreen to avoid triggering the transform3d animation for setup
-			// TODO: better way then setTimeout of 10ms?
-			setTimeout(function(){
-				that._addClassesToElement( element );
-			}, 10);
+			// Add CSS classes
+			element.className += " breakifySection breakifyAnim" + ( index > 0 ? " breakifyHide" : "");
 
+			// Refresh height after the first page has been created
 			if ( index == 0 ) {
-				setTimeout(function(){
-					that._refreshHeight();
-				}, 20)
+				_refreshHeight();
 			}
 
 			// Add index used for paging
 			element.setAttribute( "breakify-page" , index );
 		})
-
-		// Set current page
-		this._currentPage = 0;
-
-		// Add paginator
-		this._addPaginator();
 	}
 
-	_getNumber( number ) {
+	/**
+	 * Convert CSS properties to number
+	 *
+	 * Remove any "px" suffix when present, return always 0 otherwise if the argument is not already a number.
+	 */
+	function _getNumber( number ) {
 		if (!isNaN( number )) {
 			return number;
 		}
@@ -65,54 +133,63 @@ class BreakifyJS {
 			return 0;
 		}
 		if ( number.indexOf("px") != -1 ) {
-			return parseInt(number.replace( "px", ""), 10);
+			return parseInt( number.replace( "px", ""), 10 );
 		}
 	}
 
-	_getTotalHeight( index ) {
+	/**
+	 * Get page by index
+	 */
+	function _getPage( index ) {
+		if ( index >= 0 && index < elements.length ) {
+			return elements[ index ];
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Get total height (page + paginator)
+	 */
+	function _getTotalHeight( index ) {
+		let paginatorTotalHeight = paginator.getHeight();
 		
-		let paginatorTotalHeight = this._paginator.getHeight();
-		
-		let currentPageStyle = window.getComputedStyle( this._getPage( index ) );
-		let pageHeight = this._getNumber( currentPageStyle.height );
-		let pageTop = this._getNumber( currentPageStyle.top );
-		let pageMarginTop = this._getNumber( currentPageStyle.marginTop );
-		let pageMarginBottom = this._getNumber( currentPageStyle.marginBottom );
-		let pagePaddingTop = this._getNumber( currentPageStyle.paddingTop );
-		let pagePaddingBottom = this._getNumber( currentPageStyle.paddingBottom );
+		let currentPageStyle = window.getComputedStyle( _getPage( index ) );
+		let pageHeight = _getNumber( currentPageStyle.height );
+		let pageTop = _getNumber( currentPageStyle.top );
+		let pageMarginTop = _getNumber( currentPageStyle.marginTop );
+		let pageMarginBottom = _getNumber( currentPageStyle.marginBottom );
+		let pagePaddingTop = _getNumber( currentPageStyle.paddingTop );
+		let pagePaddingBottom = _getNumber( currentPageStyle.paddingBottom );
 		let pageTotalHeight = Math.round( pageHeight + pageTop + pageMarginTop + pageMarginBottom + pagePaddingTop + pagePaddingBottom );
 
 		return paginatorTotalHeight + pageTotalHeight;
 	}
 
-	_setHeight( newHeight ) {
-		this.wrapper.style.height = newHeight +"px";
+	/**
+	 * Convenience method to update height
+	 *
+	 * @see _getTotalHeight( index )
+	 * @see _setHeight ( newHeight )
+	 */
+	function _refreshHeight() {
+		_setHeight( _getTotalHeight( currentPageIndex ) );
 	}
 
-	_refreshHeight() {
-		this._setHeight( this._getTotalHeight( this._currentPage ) );
+	/**
+	 * Set new height
+	 */
+	function _setHeight( newHeight ) {
+		wrapper.style.height = newHeight +"px";
 	}
 
-	_addCssFile() {
-		let cssTag = document.createElement( "link" );
-		cssTag.href = "breakify.css";
-		cssTag.type = "text/css";
-		cssTag.rel = "stylesheet";
-		document.getElementsByTagName( "head" )[0].appendChild( cssTag );
-	}
 
-	_addClassesToElement( element ) {
-		element.className += " breakifySection breakifyAnim";
-	}
 
-	_addPaginator() {
-		this._paginator = new Paginator( this.wrapper, this );
-	}
-
-	goToPreviousPage() {
-		let currentPage = this._getPage( this._currentPage );
-		let nextPageIndex = this._currentPage - 1;
-		let nextPage = this._getPage( nextPageIndex );
+	/* Public Methods */
+	function prevPage() {
+		let currentPage = _getPage( currentPageIndex );
+		let nextPageIndex = currentPageIndex - 1;
+		let nextPage = _getPage( nextPageIndex );
 
 		if ( nextPage == null ) {
 			console.log( "BreakifyJS: trying to get page " + nextPageIndex);
@@ -121,120 +198,55 @@ class BreakifyJS {
 
 		nextPage.classList.remove( "breakifyHide" );
 
-		// TODO: add a method for this?
-		let wrapperWidth = window.getComputedStyle( this.wrapper ).width;
-		let nextPageHeight = this._getTotalHeight( nextPageIndex );
-		this._setHeight( nextPageHeight );
-		currentPage.style.transform = "translate3d(" + wrapperWidth + ", 0, 0)";
+		let wrapperWidth = _getNumber(window.getComputedStyle( wrapper ).width);
+		let nextPageHeight = _getTotalHeight( nextPageIndex );
+		_setHeight( nextPageHeight );
 		nextPage.style.transform = "translate3d(0, 0, 0)";
+		currentPage.style.transform = "translate3d(" + wrapperWidth + "px, 0, 0)";
 
-		this._currentPage--;
+		currentPageIndex--;
 
+		// Hide hidden page to improve performance
 		setTimeout( function(){
 			currentPage.classList.add( "breakifyHide" );
 		}, 500 );
 	}
 
-	goToNextPage() {
-		let currentPage = this._getPage( this._currentPage );
-		let nextPageIndex = this._currentPage + 1;
-		let nextPage = this._getPage( nextPageIndex );
+	function nextPage() {
+		let currentPage = _getPage( currentPageIndex );
+		let nextPageIndex = currentPageIndex + 1;
+		let nextPage = _getPage( nextPageIndex );
 
 		if ( nextPage == null ) {
-			console.log( "BreakifyJS: trying to get page " + nextPageIndex + ", but number of pages is " + this.elements.length);
+			console.log( "BreakifyJS: trying to get page " + nextPageIndex + ", but number of pages is " + elements.length);
 			return;
 		}
 
 		nextPage.classList.remove( "breakifyHide" );
 
-		// TODO: add a method for this?
-		let wrapperWidth = window.getComputedStyle( this.wrapper ).width.replace( "px", "" );
-		let nextPageHeight = this._getTotalHeight( nextPageIndex );
-		this._setHeight( nextPageHeight );
+		let wrapperWidth = _getNumber(window.getComputedStyle( wrapper ).width);
+		let nextPageHeight = _getTotalHeight( nextPageIndex );
+		_setHeight( nextPageHeight );
 		currentPage.style.transform = "translate3d(" + (-1 * wrapperWidth) + "px, 0, 0)";
 		nextPage.style.transform = "translate3d(0, 0, 0)";
 
-		this._currentPage++;
+		currentPageIndex++;
 
+		// Hide hidden page to improve performance
 		setTimeout( function(){
 			currentPage.classList.add( "breakifyHide" );
 		}, 500 );
 	}
 
-	_getPage( index ) {
-		// TODO: add a checkBounds method?
-		if ( index >= 0 && index < this.elements.length ) {
-			return this.elements[index];
-		} else {
-			return null;
-		}
-	}
-}
+	// Call the constructor function automatically when a Paginator instance is created
+	_constructor( configObj );
 
-class Paginator {
-
-	constructor( wrapper, breakifyJS ) {
-		this._paginatorWrapper = document.createElement( "div" );
-		this._paginatorWrapper.className = "breakifyPaginatorWrapper";
-
-		let linkPrev = document.createElement( "a" );
-		linkPrev.innerHTML = "Prev";
-		linkPrev.className = "breakifyPaginator breakifyLeft";
-
-		let linkNext = document.createElement( "a" );
-		linkNext.innerHTML = "Next";
-		linkNext.className = "breakifyPaginator breakifyRight";
-
-		let clear = document.createElement( "div" );
-		clear.className = "breakifyClear";
-
-		this._paginatorWrapper.appendChild( linkPrev );
-		this._paginatorWrapper.appendChild( linkNext );
-		this._paginatorWrapper.appendChild( clear );
-		wrapper.insertBefore( this._paginatorWrapper, wrapper.firstChild );
-
-		let breakifyHandle = breakifyJS;
-		linkPrev.addEventListener( "click" , function( event ) {
-			breakifyHandle.goToPreviousPage();
-		}, false );
-		linkNext.addEventListener( "click" , function( event ) {
-			breakifyHandle.goToNextPage();
-		}, false );
+	var publicInterface = {
+		init : _constructor,
+		goToPreviousPage : prevPage,
+		goToNextPage : nextPage
 	}
 
-	_getNumber( number ) {
-		if (!isNaN( number )) {
-			return number;
-		}
-		if ( number === "auto" ) {
-			return 0;
-		}
-		if ( number.indexOf("px") != -1 ) {
-			return parseInt(number.replace( "px", ""), 10);
-		}
-	}
+	return publicInterface;
 
-	getHeight() {
-		let paginatorStyle = window.getComputedStyle( this._paginatorWrapper );
-		let paginatorHeight = this._getNumber( paginatorStyle.height );
-		let paginatorTop = this._getNumber( paginatorStyle.top );
-		let paginatorMarginTop = this._getNumber( paginatorStyle.marginTop );
-		let paginatorMarginBottom = this._getNumber( paginatorStyle.marginBottom );
-		let paginatorPaddingTop = this._getNumber( paginatorStyle.paddingTop );
-		let paginatorPaddingBottom = this._getNumber( paginatorStyle.paddingBottom );
-
-		return Math.round( paginatorHeight + paginatorTop + paginatorMarginTop + paginatorMarginBottom + paginatorPaddingTop + paginatorPaddingBottom );
-	}
-
-}
-
-
-// Check DOM status to address when script is loaded asynchronously
-// DOMContentLoaded might be already fired at this time
-if ( document.readyState === "interactive" || document.readyState === "complete" ) {
-    var breakify = new BreakifyJS( ".js-breakify", "section" );
-} else {
-	document.addEventListener( "DOMContentLoaded", function(event) {
-		var breakify = new BreakifyJS( ".js-breakify", "section" );
-	});
-}
+});

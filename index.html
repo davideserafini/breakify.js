@@ -3,7 +3,8 @@
     <head>
         <meta charset="utf-8">
         <title>breakify.js test page</title>
-        <script src="breakify.js" async></script>
+        <script src="breakify.js"></script>
+        <link href="breakify.css" rel="stylesheet" type="text/css"/>
     </head>
     <body>
         <h1>Test page for breakify.js (thanks <a href="http://www.lipsum.com/">lipsum.com</a>)</h1>
@@ -34,5 +35,9 @@
 	        	Integer eget condimentum neque, vel finibus mi. Suspendisse consequat elit in sapien fringilla, ac facilisis enim egestas. Proin sed urna a quam interdum sagittis. Nunc non convallis arcu. Quisque ac condimentum ipsum. Maecenas sed justo ultricies, hendrerit enim non, finibus nibh. In hac habitasse platea dictumst.
 	        </section>
         </div>
+
+        <script>
+        	var breakify = new BreakifyJS( { wrapperSelector : ".js-breakify", elementsSelector : "section" } );
+        </script>
     </body>
 </html>
