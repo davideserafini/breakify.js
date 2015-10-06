@@ -9,12 +9,12 @@
  .breakifyWrapper {
  	overflow-x: hidden;
  	position: relative;
- 	height: 500px;
+ 	transition: height 0.2s linear;
  }
 
  .breakifySection {
  	position: absolute;
- 	top: 0px;
+ 	top: 20px;
  	left: 0px;
  }
 
@@ -27,7 +27,11 @@
  }
   .breakifyRight {
  	float: right;
- }
+}
  .breakifyClear {
  	clear: both;
  }
+
+.breakifyHide {
+	display: none;
+}
