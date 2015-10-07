@@ -45,7 +45,11 @@
         <script>
         	var breakify;
         	function initBreakify() {
-        		var breakify = new BreakifyJS( { wrapperSelector : ".js-breakify", elementsSelector : "section" } );
+        		var breakify = new BreakifyJS( { 
+        			wrapperSelector : ".js-breakify", 
+        			elementsSelector : "section",
+        			changeUrl : "hash"
+        		} );
         	}
         </script>
         <script src="breakify.js?callback=initBreakify" async></script>

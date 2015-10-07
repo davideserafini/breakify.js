@@ -10,11 +10,17 @@
  */
 var BreakifyJS = ( function( configObj ) {
 
-	var wrapperSelector, elementsSelector, 
+	var wrapperSelector, elementsSelector, changeUrl,
 		wrapper, elements, 
 		paginator, 
 		urlLinker,
 		currentPageIndex;
+
+	var defaultConfig = {
+		wrapperSelector : ".js-breakify",
+		elementsSelector : "section",
+		changeUrl : "none"
+	}
 
 	/**
 	 * Provide prev/next links DOM and event binding
@@ -28,15 +34,15 @@ var BreakifyJS = ( function( configObj ) {
 			paginatorWrapper = document.createElement( "div" );
 			paginatorWrapper.className = "breakifyPaginatorWrapper";
 
-			let linkPrev = document.createElement( "a" );
+			var linkPrev = document.createElement( "a" );
 			linkPrev.innerHTML = "Prev";
 			linkPrev.className = "breakifyPaginator breakifyLeft";
 
-			let linkNext = document.createElement( "a" );
+			var linkNext = document.createElement( "a" );
 			linkNext.innerHTML = "Next";
 			linkNext.className = "breakifyPaginator breakifyRight";
 
-			let clear = document.createElement( "div" );
+			var clear = document.createElement( "div" );
 			clear.className = "breakifyClear";
 
 			paginatorWrapper.appendChild( linkPrev );
@@ -56,13 +62,13 @@ var BreakifyJS = ( function( configObj ) {
 		 * Get total height of pagination div
 		 */
 		function getHeight() {
-			let paginatorStyle = window.getComputedStyle( paginatorWrapper );
-			let paginatorHeight = _getNumber( paginatorStyle.height );
-			let paginatorTop = _getNumber( paginatorStyle.top );
-			let paginatorMarginTop = _getNumber( paginatorStyle.marginTop );
-			let paginatorMarginBottom = _getNumber( paginatorStyle.marginBottom );
-			let paginatorPaddingTop = _getNumber( paginatorStyle.paddingTop );
-			let paginatorPaddingBottom = _getNumber( paginatorStyle.paddingBottom );
+			var paginatorStyle = window.getComputedStyle( paginatorWrapper );
+			var paginatorHeight = _getNumber( paginatorStyle.height );
+			var paginatorTop = _getNumber( paginatorStyle.top );
+			var paginatorMarginTop = _getNumber( paginatorStyle.marginTop );
+			var paginatorMarginBottom = _getNumber( paginatorStyle.marginBottom );
+			var paginatorPaddingTop = _getNumber( paginatorStyle.paddingTop );
+			var paginatorPaddingBottom = _getNumber( paginatorStyle.paddingBottom );
 
 			return Math.round( paginatorHeight + paginatorTop + paginatorMarginTop + paginatorMarginBottom + paginatorPaddingTop + paginatorPaddingBottom );
 		}
@@ -82,21 +88,91 @@ var BreakifyJS = ( function( configObj ) {
 	 */
 	function UrlLinker() {
 
-	 	let HASH_ID = "page"; 
+		var UrlLinkerToUse;
 
-	 	function setPage( page ) {
-	 		window.location.hash = "#" + HASH_ID + page;
+		var EmptyUrlLinker = ( function() {
+
+			function setPage() {}
+			function getPage() { return null; }
+
+			return {
+				setPage : setPage,
+				getPage : getPage
+			}
+		});
+
+		var HashUrlLinker = ( function() {
+			
+			var KEY = "page"; 
+
+			function setPage( page ) {
+		 		window.location.hash = "#" + KEY + page;
+		 	}
+
+		 	function getPage() {
+		 		var hash = window.location.hash.substring(1);
+		 		var value = hash.replace( KEY, "");
+		 		return value != "" ? value : 0;
+		 	}
+
+		 	return {
+		 		setPage : setPage,
+		 		getPage : getPage
+		 	}
+		});
+
+		var HistoryUrlLinker = ( function() {
+			
+			var KEY = "page";
+			var realPageUrl = document.URL;
+
+			function setPage( page ) {
+				var finalUrl = realPageUrl;
+				if ( realPageUrl.lastIndexOf( "/" ) != realPageUrl.length - 1 ) {
+					finalUrl += "/";
+				}
+				window.history.replaceState( null, KEY + page, finalUrl + KEY + page );
+		 	}
+
+		 	function getPage() {
+		 		// Assume that the last /KEY# in the Url, if any, is the state
+		 		if ( window.location.href.indexOf( KEY ) == -1 ) {
+		 			return 0;
+		 		}
+		 		var path = window.location.pathname.split( "/" );
+		 		var value;
+		 		for ( let pathStep of path ) {
+		 			if ( pathStep.indexOf( KEY ) == 0 ) {
+		 				value = pathStep.replace( KEY, "");
+		 				break;
+		 			}
+		 		}
+
+		 		return value != "" ? value : 0;
+		 	}
+
+		 	return {
+		 		setPage : setPage,
+		 		getPage : getPage
+		 	}
+		});
+
+	 	switch ( changeUrl ) {
+	 		case "hash":
+	 			UrlLinkerToUse = HashUrlLinker();
+	 			break;
+	 		case "history":
+	 			UrlLinkerToUse = HistoryUrlLinker();
+	 			break;
+	 		case "none":
+	 		default:
+	 			UrlLinkerToUse = EmptyUrlLinker();
 	 	}
 
-	 	function getPage() {
-	 		let hash = window.location.hash.substring(1);
-	 		let value = hash.replace( HASH_ID, "");
-	 		return value != "" ? value : 0;
-	 	}
 
 	 	return {
-	 		setPage : setPage,
-	 		getPage : getPage
+	 		setPage : UrlLinkerToUse.setPage,
+	 		getPage : UrlLinkerToUse.getPage
 	 	}
 	 }
 
@@ -105,13 +181,22 @@ var BreakifyJS = ( function( configObj ) {
 	 */
 	function _constructor( configObj ) {
 
+		// TODO: remove variables and switch to configuration object merged with defaultConfig
+
 		// Set selectors
-		wrapperSelector = configObj.wrapperSelector;
-		elementsSelector = configObj.elementsSelector;
+		if ( configObj.wrapperSelector != undefined ) {
+			wrapperSelector = configObj.wrapperSelector;
+		}
+		if ( configObj.elementsSelector != undefined ) {
+			elementsSelector = configObj.elementsSelector;
+		}
+		// Set configuration for URL support
+		if ( configObj.changeUrl != undefined ) {
+			changeUrl = configObj.changeUrl;
+		}
 
 		// Get DOM elements based on selector
 		wrapper = document.querySelector( wrapperSelector );
-		// TODO: change to getelementsbyclassname if selector starts with .
 		elements = wrapper.querySelectorAll( elementsSelector );
 
 		// Set current page
@@ -125,7 +210,7 @@ var BreakifyJS = ( function( configObj ) {
 
 		// Set CSS classes, special properties and position
 		wrapper.className += " breakifyWrapper";
-		let wrapperWidth = window.getComputedStyle( wrapper ).width;
+		var wrapperWidth = window.getComputedStyle( wrapper ).width;
 
 		[].forEach.call( elements, function( element, index ) {
 
@@ -181,16 +266,16 @@ var BreakifyJS = ( function( configObj ) {
 	 * Get total height (page + paginator)
 	 */
 	function _getTotalHeight( index ) {
-		let paginatorTotalHeight = paginator.getHeight();
+		var paginatorTotalHeight = paginator.getHeight();
 		
-		let currentPageStyle = window.getComputedStyle( _getPage( index ) );
-		let pageHeight = _getNumber( currentPageStyle.height );
-		let pageTop = _getNumber( currentPageStyle.top );
-		let pageMarginTop = _getNumber( currentPageStyle.marginTop );
-		let pageMarginBottom = _getNumber( currentPageStyle.marginBottom );
-		let pagePaddingTop = _getNumber( currentPageStyle.paddingTop );
-		let pagePaddingBottom = _getNumber( currentPageStyle.paddingBottom );
-		let pageTotalHeight = Math.round( pageHeight + pageTop + pageMarginTop + pageMarginBottom + pagePaddingTop + pagePaddingBottom );
+		var currentPageStyle = window.getComputedStyle( _getPage( index ) );
+		var pageHeight = _getNumber( currentPageStyle.height );
+		var pageTop = _getNumber( currentPageStyle.top );
+		var pageMarginTop = _getNumber( currentPageStyle.marginTop );
+		var pageMarginBottom = _getNumber( currentPageStyle.marginBottom );
+		var pagePaddingTop = _getNumber( currentPageStyle.paddingTop );
+		var pagePaddingBottom = _getNumber( currentPageStyle.paddingBottom );
+		var pageTotalHeight = Math.round( pageHeight + pageTop + pageMarginTop + pageMarginBottom + pagePaddingTop + pagePaddingBottom );
 
 		return paginatorTotalHeight + pageTotalHeight;
 	}
@@ -216,22 +301,26 @@ var BreakifyJS = ( function( configObj ) {
 
 	/* Public Methods */
 	function goToPage ( index ) {
+		if ( index == null ) {
+			return;
+		}
+		var pageToGo;
 		if ( currentPageIndex < index ) {
-			let pageToGo = index - currentPageIndex;
+			pageToGo = index - currentPageIndex;
 			for ( let i = 0; i < pageToGo; i++ ) {
 				goToNextPage();
 			}
 		} else if ( currentPageIndex > index ) {
-			let pageToGo = currentPageIndex > index;
+			pageToGo = currentPageIndex > index;
 			for ( let i = pageToGo; i > 0; i++ ) {
 				goToPrevPage();
 			}
 		}
 	}
 	function goToPreviousPage() {
-		let currentPage = _getPage( currentPageIndex );
-		let nextPageIndex = currentPageIndex - 1;
-		let nextPage = _getPage( nextPageIndex );
+		var currentPage = _getPage( currentPageIndex );
+		var nextPageIndex = currentPageIndex - 1;
+		var nextPage = _getPage( nextPageIndex );
 
 		if ( nextPage == null ) {
 			console.log( "BreakifyJS: trying to get page " + nextPageIndex);
@@ -240,8 +329,8 @@ var BreakifyJS = ( function( configObj ) {
 
 		nextPage.classList.remove( "breakifyHide" );
 
-		let wrapperWidth = _getNumber(window.getComputedStyle( wrapper ).width);
-		let nextPageHeight = _getTotalHeight( nextPageIndex );
+		var wrapperWidth = _getNumber(window.getComputedStyle( wrapper ).width);
+		var nextPageHeight = _getTotalHeight( nextPageIndex );
 		_setHeight( nextPageHeight );
 		nextPage.style.transform = "translate3d(0, 0, 0)";
 		currentPage.style.transform = "translate3d(" + wrapperWidth + "px, 0, 0)";
@@ -257,9 +346,9 @@ var BreakifyJS = ( function( configObj ) {
 	}
 
 	function goToNextPage() {
-		let currentPage = _getPage( currentPageIndex );
-		let nextPageIndex = currentPageIndex + 1;
-		let nextPage = _getPage( nextPageIndex );
+		var currentPage = _getPage( currentPageIndex );
+		var nextPageIndex = currentPageIndex + 1;
+		var nextPage = _getPage( nextPageIndex );
 
 		if ( nextPage == null ) {
 			console.log( "BreakifyJS: trying to get page " + nextPageIndex + ", but number of pages is " + elements.length);
@@ -268,8 +357,8 @@ var BreakifyJS = ( function( configObj ) {
 
 		nextPage.classList.remove( "breakifyHide" );
 
-		let wrapperWidth = _getNumber(window.getComputedStyle( wrapper ).width);
-		let nextPageHeight = _getTotalHeight( nextPageIndex );
+		var wrapperWidth = _getNumber(window.getComputedStyle( wrapper ).width);
+		var nextPageHeight = _getTotalHeight( nextPageIndex );
 		_setHeight( nextPageHeight );
 		currentPage.style.transform = "translate3d(" + (-1 * wrapperWidth) + "px, 0, 0)";
 		nextPage.style.transform = "translate3d(0, 0, 0)";
@@ -301,8 +390,8 @@ var BreakifyJS = ( function( configObj ) {
 // Check if this was called asynchronously 
 ( function() {
 	// Get this sript from DOM and its real src
-	let thisScript = document.querySelector( "script[ src *= 'breakify.js']" );
-	let thisScriptSrc = thisScript.src;
+	var thisScript = document.querySelector( "script[ src *= 'breakify.js']" );
+	var thisScriptSrc = thisScript.src;
 
 	// CHeck if a callback was provided
 	if ( thisScriptSrc.indexOf( "callback=" ) != -1 ) {
