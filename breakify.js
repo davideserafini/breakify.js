@@ -80,7 +80,7 @@ var BreakifyJS = ( function( configObj ) {
 	/**
 	 * UrlLinker
 	 */
-	 function UrlLinker() {
+	function UrlLinker() {
 
 	 	let HASH_ID = "page"; 
 
@@ -284,7 +284,7 @@ var BreakifyJS = ( function( configObj ) {
 		}, 500 );
 	}
 
-	// Call the constructor function automatically when a Paginator instance is created
+	// Call the constructor function automatically when a BreakifyJS instance is created
 	_constructor( configObj );
 
 	var publicInterface = {
@@ -297,3 +297,28 @@ var BreakifyJS = ( function( configObj ) {
 	return publicInterface;
 
 });
+
+// Check if this was called asynchronously 
+( function() {
+	// Get this sript from DOM and its real src
+	let thisScript = document.querySelector( "script[ src *= 'breakify.js']" );
+	let thisScriptSrc = thisScript.src;
+
+	// CHeck if a callback was provided
+	if ( thisScriptSrc.indexOf( "callback=" ) != -1 ) {
+		let callbackName;
+		let queryString = thisScriptSrc.substring( thisScriptSrc.indexOf( "?" ) + 1 );
+		let queryParamsPairs = queryString.split( "&" );
+		for ( let param of queryParamsPairs) {
+			if ( param.indexOf( "callback=" ) == 0 ) {
+				callbackName = param.substring( "callback=".length );
+				break;
+			}
+		}
+
+		if ( callbackName != null ) {
+			window[ callbackName ]();
+		}
+	}
+} )()
+

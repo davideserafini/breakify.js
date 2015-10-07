@@ -35,9 +35,19 @@
 	        </section>
         </div>
 
-        <script src="breakify.js"></script>
+        <!-- standard way -->
+        <!--<script src="breakify.js"></script>
         <script>
         	var breakify = new BreakifyJS( { wrapperSelector : ".js-breakify", elementsSelector : "section" } );
+        </script>-->
+
+        <!-- async way -->
+        <script>
+        	var breakify;
+        	function initBreakify() {
+        		var breakify = new BreakifyJS( { wrapperSelector : ".js-breakify", elementsSelector : "section" } );
+        	}
         </script>
+        <script src="breakify.js?callback=initBreakify" async></script>
     </body>
 </html>
