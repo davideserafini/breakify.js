@@ -11,7 +11,10 @@ Breakify.js uses a configuration object, the following properties are supported:
 Both must be valid selectors to be used by the querySelector. Breakify.js uses width of the wrapper to scroll the elements.
 This is the constructor used in test page index.html
 ```javascript
-var breakify = new BreakifyJS( { wrapperSelector : ".js-breakify", elementsSelector : "section" } );
+var breakify = new BreakifyJS( { 
+  wrapperSelector : ".js-breakify", 
+  elementsSelector : "section" 
+} );
 ```
 Page structure is simply
 ```html
@@ -27,4 +30,18 @@ Page structure is simply
   </section>
 </div>
 ...
+```
+BreakifyJS also supports asynchronous loading with a callback be passed in the script src.
+Examples can be found in [index.html](index.html).
+```HTML
+<script>
+  var breakify;
+  function initBreakify() {
+  	var breakify = new BreakifyJS( { 
+  	  wrapperSelector : ".js-breakify", 
+  	  elementsSelector : "section" 
+    } );
+  }
+  </script>
+  <script src="breakify.js?callback=initBreakify" async></script>
 ```
