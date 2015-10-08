@@ -2,9 +2,6 @@
 A simple JS script to break a list of sections into pages, with URL support to allow sharing of a specific page.
 
 Javascript is evolving, therefore this script is written in Vanilla JS just for the sake of avoiding frameworks at least once and play around with ES6. Older browsers and cross-browser support is not a point either. Built and tested using Google Chrome 45.
-=======
-Javascript is evolving, therefore this script is written in Vanilla JS just for the sake of avoiding frameworks at least once and play around with ES6. Older browsers and cross-browser support is not a point either.
->>>>>>> b628b45c53896fb95505fb199a6a6f2b1ed47b4b
 
 ## how to use
 Breakify.js uses a configuration object, the following properties are supported:
