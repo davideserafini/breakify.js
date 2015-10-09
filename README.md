@@ -11,6 +11,7 @@ Breakify.js uses a configuration object, the following properties are supported:
 -- hash: uses hash
 -- history: uses HTML5 History API
 -- none: URL is not changed. This is the default when changeUrl is not specified.
+- changeUrlKey: the string used to update the url when changeUrl is set to hash or history. Default is "page". Empty is allowed.
 
 Breakify.js uses width of the wrapper to scroll the elements.
 
@@ -19,7 +20,8 @@ This is the constructor used in test page index.html
 var breakify = new BreakifyJS( { 
 	wrapperSelector : ".js-breakify", 
 	elementsSelector : "section",
-	changeUrl : "hash"
+	changeUrl : "hash",
+	changeUrlKey : "test"
 } );
 ```
 Page structure is simply

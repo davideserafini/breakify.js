@@ -38,7 +38,12 @@
         <!-- standard way -->
         <!--<script src="breakify.js"></script>
         <script>
-        	var breakify = new BreakifyJS( { wrapperSelector : ".js-breakify", elementsSelector : "section" } );
+        	var breakify = new BreakifyJS( { 
+        		wrapperSelector : ".js-breakify", 
+        		elementsSelector : "section" ,
+        		changeUrl : "hash",
+				changeUrlKey : "test"
+        	} );
         </script>-->
 
         <!-- async way -->
@@ -48,7 +53,8 @@
         		var breakify = new BreakifyJS( { 
         			wrapperSelector : ".js-breakify", 
         			elementsSelector : "section",
-        			changeUrl : "hash"
+        			changeUrl : "hash",
+					changeUrlKey : "test"
         		} );
         	}
         </script>
