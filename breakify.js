@@ -269,6 +269,9 @@ var BreakifyJS = ( function( configObj ) {
 		return paginatorTotalHeight + pageTotalHeight;
 	}
 
+	/**
+	 * Merge two objects using ES6 Object.assign
+	 */
 	function _mergeObject( target, source ) {
 		return Object.assign({}, target, source );
 	}
