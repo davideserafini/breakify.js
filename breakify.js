@@ -10,16 +10,14 @@
  */
 var BreakifyJS = ( function( configObj ) {
 
-	var defaultConfig = {
+	var config = {
 		wrapperSelector : ".js-breakify",
 		elementsSelector : "section",
 		changeUrl : "none",
 		changeUrlKey : "page"
 	}
 
-	var wrapperSelector, elementsSelector, 
-		changeUrl, changeUrlKey,
-		wrapper, elements, 
+	var wrapper, elements, 
 		paginator, 
 		urlLinker,
 		currentPageIndex;
@@ -106,12 +104,12 @@ var BreakifyJS = ( function( configObj ) {
 		var HashUrlLinker = ( function() {
 			
 			function setPage( page ) {
-		 		window.location.hash = "#" + changeUrlKey + page;
+		 		window.location.hash = "#" + config.changeUrlKey + page;
 		 	}
 
 		 	function getPage() {
 		 		var hash = window.location.hash.substring(1);
-		 		var value = hash.replace( changeUrlKey, "");
+		 		var value = hash.replace( config.changeUrlKey, "");
 		 		return value != "" ? value : 0;
 		 	}
 
@@ -130,20 +128,20 @@ var BreakifyJS = ( function( configObj ) {
 				if ( realPageUrl.lastIndexOf( "/" ) != realPageUrl.length - 1 ) {
 					finalUrl += "/";
 				}
-				window.history.replaceState( null, changeUrlKey + page, finalUrl + changeUrlKey + page );
+				window.history.replaceState( null, config.changeUrlKey + page, finalUrl + config.changeUrlKey + page );
 		 	}
 
 		 	function getPage() {
 		 		// Assume that the last /KEY# in the Url, if any, is the state. Empty KEY is avoided here.
-		 		if ( changeUrlKey != "" ) {
-			 		if ( window.location.href.indexOf( changeUrlKey ) == -1 ) {
+		 		if ( config.changeUrlKey != "" ) {
+			 		if ( window.location.href.indexOf( config.changeUrlKey ) == -1 ) {
 			 			return 0;
 			 		}
 			 		var path = window.location.pathname.split( "/" );
 			 		var value;
 			 		for ( let pathStep of path ) {
-			 			if ( pathStep.indexOf( changeUrlKey ) == 0 ) {
-			 				value = pathStep.replace( changeUrlKey, "");
+			 			if ( pathStep.indexOf( config.changeUrlKey ) == 0 ) {
+			 				value = pathStep.replace( config.changeUrlKey, "");
 			 				break;
 			 			}
 			 		}
@@ -160,7 +158,7 @@ var BreakifyJS = ( function( configObj ) {
 		 	}
 		});
 
-	 	switch ( changeUrl ) {
+	 	switch ( config.changeUrl ) {
 	 		case "hash":
 	 			UrlLinkerToUse = HashUrlLinker();
 	 			break;
@@ -184,32 +182,11 @@ var BreakifyJS = ( function( configObj ) {
 	 */
 	function _constructor( configObj ) {
 
-		// TODO: remove variables and switch to configuration object merged with defaultConfig
-		wrapperSelector = defaultConfig.wrapperSelector;
-		elementsSelector = defaultConfig.elementsSelector;
-		changeUrl = defaultConfig.changeUrl;
-		changeUrlKey = defaultConfig.changeUrlKey;
-
-		// Set selectors
-		if ( configObj.wrapperSelector != undefined ) {
-			wrapperSelector = configObj.wrapperSelector;
-		}
-		if ( configObj.elementsSelector != undefined ) {
-			elementsSelector = configObj.elementsSelector;
-		}
-		// Set configuration for URL support
-		if ( configObj.changeUrl != undefined ) {
-			changeUrl = configObj.changeUrl;
-
-			// Set key for URL support. Only need to check if a mode different from none is set
-			if ( changeUrl != "none" && configObj.changeUrlKey != undefined ) {
-				changeUrlKey = configObj.changeUrlKey;
-			}
-		}
+		config = _mergeObject( config, configObj );
 
 		// Get DOM elements based on selector
-		wrapper = document.querySelector( wrapperSelector );
-		elements = wrapper.querySelectorAll( elementsSelector );
+		wrapper = document.querySelector( config.wrapperSelector );
+		elements = wrapper.querySelectorAll( config.elementsSelector );
 
 		// Set current page
 		currentPageIndex = 0;
@@ -290,6 +267,10 @@ var BreakifyJS = ( function( configObj ) {
 		var pageTotalHeight = Math.round( pageHeight + pageTop + pageMarginTop + pageMarginBottom + pagePaddingTop + pagePaddingBottom );
 
 		return paginatorTotalHeight + pageTotalHeight;
+	}
+
+	function _mergeObject( target, source ) {
+		return Object.assign({}, target, source );
 	}
 
 	/**
